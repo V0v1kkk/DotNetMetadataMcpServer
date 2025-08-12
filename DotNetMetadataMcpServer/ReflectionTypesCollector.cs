@@ -67,9 +67,15 @@ public class ReflectionTypesCollector
             if (type.FullName == null)
                 continue;
 
-            var ti = CollectTypeInfo(type);
-
-            result.Add(ti);
+            try
+            {
+                var ti = CollectTypeInfo(type);
+                result.Add(ti);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect type info for {Type}", type.FullName ?? type.Name);
+            }
         }
 
         return result;
@@ -84,74 +90,118 @@ public class ReflectionTypesCollector
             .Select(i => i.Name)
             .ToList();
 
-        // Collect constructors with parameters
-        model.Constructors = type.GetConstructors(BindingFlags.Public | BindingFlags.Instance)
-            .Select(c => new ConstructorInfoModel
+        // Collect constructors with parameters (skip broken ones)
+        var constructors = new List<ConstructorInfoModel>();
+        foreach (var ctor in type.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+        {
+            try
             {
-                Name = c.Name,
-                Parameters = c.GetParameters()
+                var parameters = ctor.GetParameters()
                     .Select(p => new ParameterInfoModel
                     {
                         Name = p.Name ?? "",
                         ParameterType = p.ParameterType.Name
                     })
-                    .ToList()
-            })
-            .ToList();
+                    .ToList();
 
-        // Collect methods with parameters
-        model.Methods = type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
-            .Select(m => CollectMethodInfo(m))
-            .ToList();
+                constructors.Add(new ConstructorInfoModel
+                {
+                    Name = ctor.Name,
+                    Parameters = parameters
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect constructor info for {Type}::{Ctor}", model.FullName, ctor.Name);
+            }
+        }
+        model.Constructors = constructors;
+
+        // Collect methods with parameters (skip broken ones)
+        var methods = new List<MethodInfoModel>();
+        foreach (var m in type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+        {
+            try
+            {
+                var mi = CollectMethodInfo(m);
+                methods.Add(mi);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect method info for {Type}::{Method}", model.FullName, m.Name);
+            }
+        }
+        model.Methods = methods;
 
         // Properties (public at least on getter or setter)
         var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
         foreach (var p in props)
         {
-            var getMethod = p.GetGetMethod(/*nonPublic*/ false);  // only public
-            var setMethod = p.GetSetMethod(/*nonPublic*/ false);  // only public
+            try
+            {
+                var getMethod = p.GetGetMethod(/*nonPublic*/ false);  // only public
+                var setMethod = p.GetSetMethod(/*nonPublic*/ false);  // only public
 
-            bool hasPublicGetter = (getMethod != null);
-            bool hasPublicSetter = (setMethod != null);
+                bool hasPublicGetter = (getMethod != null);
+                bool hasPublicSetter = (setMethod != null);
 
-            // If there is neither a public getter nor a public setter, skip
-            if (!hasPublicGetter && !hasPublicSetter)
-                continue;
+                // If there is neither a public getter nor a public setter, skip
+                if (!hasPublicGetter && !hasPublicSetter)
+                    continue;
 
-            var propModel = CollectPropertyInfo(p);
-            model.Properties.Add(propModel);
+                var propModel = CollectPropertyInfo(p);
+                model.Properties.Add(propModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect property info for {Type}::{Property}", model.FullName, p.Name);
+            }
         }
 
         // Fields (only public)
         var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
         foreach (var f in fields)
         {
-            if (!f.IsPublic)
-                continue; // although GetFields(Public) already excludes non-public, just in case
-            var fi = CollectFieldInfo(f);
-            model.Fields.Add(fi);
+            try
+            {
+                if (!f.IsPublic)
+                    continue; // although GetFields(Public) already excludes non-public, just in case
+                var fi = CollectFieldInfo(f);
+                model.Fields.Add(fi);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect field info for {Type}::{Field}", model.FullName, f.Name);
+            }
         }
 
         // Events (public)
         var events = type.GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly);
         foreach (var e in events)
         {
-            if (e.EventHandlerType == null)
-                continue; // should not happen
-            
-            // If public add/remove methods
-            var addM = e.GetAddMethod(false);
-            var removeM = e.GetRemoveMethod(false);
-            if (addM == null && removeM == null)
-                continue;
-
-            var ei = new EventInfoModel
+            try
             {
-                Name = e.Name,
-                EventHandlerType = GetFriendlyName(e.EventHandlerType),
-                IsStatic = (addM?.IsStatic ?? false) || (removeM?.IsStatic ?? false)
-            };
-            model.Events.Add(ei);
+                if (e.EventHandlerType == null)
+                    continue; // should not happen
+                
+                // If public add/remove methods
+                var addM = e.GetAddMethod(false);
+                var removeM = e.GetRemoveMethod(false);
+                if (addM == null && removeM == null)
+                    continue;
+
+                var ei = new EventInfoModel
+                {
+                    Name = e.Name,
+                    EventHandlerType = GetFriendlyName(e.EventHandlerType),
+                    IsStatic = (addM?.IsStatic ?? false) || (removeM?.IsStatic ?? false)
+                };
+                model.Events.Add(ei);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to collect event info for {Type}::{Event}", model.FullName, e.Name);
+            }
         }
 
         return model;
