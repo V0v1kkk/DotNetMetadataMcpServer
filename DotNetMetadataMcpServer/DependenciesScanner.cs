@@ -247,7 +247,21 @@ public class DependenciesScanner : IDependenciesScanner
     private Assembly? ResolveAssembly(object? sender, ResolveEventArgs args)
     {
         var assemblyName = new AssemblyName(args.Name);
-        var assemblyPath = Path.Combine(Path.GetDirectoryName(args.RequestingAssembly?.Location) ?? string.Empty, $"{assemblyName.Name}.dll");
+        var requestingAssemblyLocation = args.RequestingAssembly?.Location;
+        string? baseDirectory = null;
+
+        if (!string.IsNullOrEmpty(requestingAssemblyLocation))
+        {
+            baseDirectory = Path.GetDirectoryName(requestingAssemblyLocation);
+        }
+
+        if (string.IsNullOrEmpty(baseDirectory))
+        {
+            // In single-file deployments Assembly.Location returns empty; fallback to app base directory
+            baseDirectory = AppContext.BaseDirectory;
+        }
+
+        var assemblyPath = Path.Combine(baseDirectory!, $"{assemblyName.Name}.dll");
 
         if (File.Exists(assemblyPath))
         {
