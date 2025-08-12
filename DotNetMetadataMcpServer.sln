@@ -8,6 +8,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution files", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		readme.md = readme.md
 		.gitignore = .gitignore
+		.github/workflows/publish.yml = .github/workflows/publish.yml
 	EndProjectSection
 EndProject
 Global

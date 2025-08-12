@@ -9,6 +9,26 @@ on:
         type: string
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Run tests
+        run: dotnet test --configuration Release --no-build --logger "trx;LogFileName=test_results.trx"
+
   build:
     runs-on: ubuntu-latest
     outputs:
@@ -45,7 +65,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   build-windows:
-    needs: build
+    needs: [build, test]
     runs-on: windows-latest
     steps:
       - name: Checkout code
@@ -76,7 +96,7 @@ jobs:
           path: DotNetMetadataMcpServer-windows-x64-v${{ needs.build.outputs.version }}.zip
 
   build-linux:
-    needs: build
+    needs: [build, test]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -109,7 +129,7 @@ jobs:
           path: DotNetMetadataMcpServer-linux-x64-v${{ needs.build.outputs.version }}.zip
 
   build-macos:
-    needs: build
+    needs: [build, test]
     runs-on: macos-latest
     strategy:
       matrix:
@@ -155,10 +175,11 @@ jobs:
           path: artifacts
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ needs.build.outputs.version }}
           name: Release v${{ needs.build.outputs.version }}
+          generate_release_notes: true
           files: |
             artifacts/DotNetMetadataMcpServer-windows-x64/DotNetMetadataMcpServer-windows-x64-v${{ needs.build.outputs.version }}.zip
             artifacts/DotNetMetadataMcpServer-linux-x64/DotNetMetadataMcpServer-linux-x64-v${{ needs.build.outputs.version }}.zip
@@ -167,4 +188,4 @@ jobs:
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
