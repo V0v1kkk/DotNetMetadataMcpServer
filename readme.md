@@ -81,6 +81,16 @@ Replace `/path/to/DotNetMetadataMcpServer` with the actual path to the published
 - **The project must be built before scanning.** The server relies on compiled assemblies to extract type information, so make sure to build your project before using the tools.
 - **The tool doesn't follow references to other projects.** It only inspects the specified project and its NuGet dependencies. If you need to analyze multiple projects, you'll need to scan each one separately.
 
+### How project outputs are located
+
+When scanning a project, the server needs the compiled assembly path. `MsBuildHelper` evaluates the project and attempts to locate the output assembly by probing configurations in this order:
+
+- the requested configuration (by default Debug), then
+- Release, and if still not found,
+- falls back to checking Debug again as a safe default.
+
+The first existing output wins. If no output is found, a reasonable default path is assumed and a warning is logged. This makes local runs (often Debug) and CI runs (often Release) behave consistently. Ensure you build the project in one of these configurations before scanning.
+
 ## Usage
 
 The server provides five main tools that can be used by AI agents:

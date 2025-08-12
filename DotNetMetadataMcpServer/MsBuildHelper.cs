@@ -35,38 +35,84 @@ public class MsBuildHelper
         }
 
         var project = new Project(csprojPath, null, null, projectCollection);
-        project.SetProperty("Configuration", configuration);
 
-        var assemblyName = project.GetPropertyValue("AssemblyName");
-        var outputPath = project.GetPropertyValue("OutputPath")
-            .Replace('\\', Path.DirectorySeparatorChar)
-            .Replace('/', Path.DirectorySeparatorChar);
+        // Try the requested configuration first, then fall back to the most common alternatives.
+        var configurationsToTry = new List<string>();
+        void addIfMissing(string cfg)
+        {
+            if (!configurationsToTry.Contains(cfg, StringComparer.OrdinalIgnoreCase))
+            {
+                configurationsToTry.Add(cfg);
+            }
+        }
 
-        var targetFramework = project.GetPropertyValue("TargetFramework");
-
-        if (string.IsNullOrWhiteSpace(assemblyName))
-            assemblyName = Path.GetFileNameWithoutExtension(csprojPath);
-
-        if (string.IsNullOrWhiteSpace(outputPath))
-            outputPath = Path.Combine("bin", configuration);
-
-        var projDir = Path.GetDirectoryName(Path.GetFullPath(csprojPath)) ?? "";
-        var fullOutputPath = Path.GetFullPath(Path.Combine(projDir, outputPath));
+        addIfMissing(configuration);
+        addIfMissing("Release");
+        addIfMissing("Debug");
 
         string? finalAsmPath = null;
-        foreach (var ext in new[] { ".dll", ".exe" })
+        string? chosenConfiguration = null;
+        string assemblyName;
+        string targetFramework;
+
+        var projDir = Path.GetDirectoryName(Path.GetFullPath(csprojPath)) ?? "";
+
+        foreach (var cfg in configurationsToTry)
         {
-            var candidate = Path.Combine(fullOutputPath, assemblyName + ext);
-            if (File.Exists(candidate))
+            project.SetProperty("Configuration", cfg);
+
+            assemblyName = project.GetPropertyValue("AssemblyName");
+            if (string.IsNullOrWhiteSpace(assemblyName))
             {
-                finalAsmPath = candidate;
+                assemblyName = Path.GetFileNameWithoutExtension(csprojPath);
+            }
+
+            var outputPath = project.GetPropertyValue("OutputPath")
+                .Replace('\\', Path.DirectorySeparatorChar)
+                .Replace('/', Path.DirectorySeparatorChar);
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                outputPath = Path.Combine("bin", cfg);
+            }
+
+            targetFramework = project.GetPropertyValue("TargetFramework");
+
+            var fullOutputPath = Path.GetFullPath(Path.Combine(projDir, outputPath));
+            foreach (var ext in new[] { ".dll", ".exe" })
+            {
+                var candidate = Path.Combine(fullOutputPath, assemblyName + ext);
+                if (File.Exists(candidate))
+                {
+                    finalAsmPath = candidate;
+                    chosenConfiguration = cfg;
+                    break;
+                }
+            }
+
+            if (finalAsmPath != null)
+            {
                 break;
             }
         }
+
+        // If not found, fall back to a reasonable default path for the originally requested configuration
+        assemblyName = project.GetPropertyValue("AssemblyName");
+        if (string.IsNullOrWhiteSpace(assemblyName))
+        {
+            assemblyName = Path.GetFileNameWithoutExtension(csprojPath);
+        }
+        targetFramework = project.GetPropertyValue("TargetFramework");
         if (finalAsmPath == null)
         {
-            finalAsmPath = Path.Combine(fullOutputPath, assemblyName + ".dll");
-            _logger.LogWarning("Assembly not found, assume {0}", finalAsmPath);
+            var fallbackOutput = project.GetPropertyValue("OutputPath");
+            if (string.IsNullOrWhiteSpace(fallbackOutput))
+            {
+                fallbackOutput = Path.Combine("bin", configuration);
+            }
+            var fullFallback = Path.GetFullPath(Path.Combine(projDir, fallbackOutput));
+            finalAsmPath = Path.Combine(fullFallback, assemblyName + ".dll");
+            _logger.LogWarning("Assembly not found for configurations [{Configs}], assuming {Path}",
+                string.Join(", ", configurationsToTry), finalAsmPath);
         }
 
         // Search for project.assets.json
