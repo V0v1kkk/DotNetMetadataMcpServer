@@ -60,6 +60,7 @@ public class MsBuildHelper
         foreach (var cfg in configurationsToTry)
         {
             project.SetProperty("Configuration", cfg);
+            project.ReevaluateIfNecessary();
 
             assemblyName = project.GetPropertyValue("AssemblyName");
             if (string.IsNullOrWhiteSpace(assemblyName))
