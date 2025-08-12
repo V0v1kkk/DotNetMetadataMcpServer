@@ -30,12 +30,20 @@ public class ReflectionTypesCollector
             return result;
         }
 
-        _logger.LogInformation("Loading assembly: {Path}", fullPath);
+        _logger.LogInformation("Loading assembly (isolated): {Path}", fullPath);
 
-        Assembly asm;
+        // Use a collectible ALC and load from memory to avoid locking files
+        var baseDir = Path.GetDirectoryName(fullPath) ?? string.Empty;
+        using var loader = new TemporaryLoadContext(baseDir, _logger);
+
+        Assembly? asm;
         try
         {
-            asm = AssemblyLoadContext.Default.LoadFromAssemblyPath(fullPath);
+            asm = loader.LoadFromFileWithoutLock(fullPath);
+            if (asm == null)
+            {
+                return result;
+            }
         }
         catch (Exception ex)
         {
@@ -78,8 +86,11 @@ public class ReflectionTypesCollector
             }
         }
 
+        // Release the load context so files can be rebuilt
+        loader.UnloadAndCollect();
         return result;
     }
+
 
     private TypeInfoModel CollectTypeInfo(Type type)
     {
