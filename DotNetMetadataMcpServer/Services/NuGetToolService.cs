@@ -1,11 +1,8 @@
 using DotNetMetadataMcpServer.Helpers;
 using DotNetMetadataMcpServer.Models;
-using Microsoft.Extensions.Logging;
 using NuGet.Common;
-using NuGet.Configuration;
 using NuGet.Protocol;
 using NuGet.Protocol.Core.Types;
-using NuGet.Versioning;
 
 namespace DotNetMetadataMcpServer.Services
 {

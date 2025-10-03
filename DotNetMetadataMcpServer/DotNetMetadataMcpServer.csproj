@@ -8,7 +8,7 @@
         <RootNamespace>DotNetMetadataMcpServer</RootNamespace>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>CS1591</NoWarn> <!-- Disable warning CS1591: Missing XML comment for publicly visible type or member -->
-        <VersionPrefix>1.0</VersionPrefix>
+        <VersionPrefix>1.1</VersionPrefix>
         <AssemblyVersion>$(VersionPrefix).1</AssemblyVersion>
         <FileVersion>$(VersionPrefix).1</FileVersion>
     </PropertyGroup>
@@ -22,7 +22,6 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />-->
 
         <PackageReference Include="DependencyGraph.Core" Version="1.0.1" />
-        <PackageReference Include="ModelContextProtocol.NET.Server.Hosting" Version="0.3.2-alpha" />
         
         <PackageReference Include="NuGet.Configuration" Version="6.13.2" />
         <PackageReference Include="NuGet.Protocol" Version="6.13.2" />
@@ -33,6 +32,8 @@
         <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
         <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
+        
+        <PackageReference Include="ModelContextProtocol" Version="0.4.0-preview.1" />
     </ItemGroup>
 
 </Project>

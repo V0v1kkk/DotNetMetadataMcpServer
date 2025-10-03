@@ -34,7 +34,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## Roadmap
 
 - [x] Add NuGet integration to provide information about actual package versions
-- [ ] Try to switch to the mcpdotnet [library](https://github.com/PederHP/mcpdotnet)
+- [x] Migrate to official Model Context Protocol C# SDK ([modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk))
 - [ ] Add dependency graph building capabilities
 - [ ] Improve multi-project scenario
 

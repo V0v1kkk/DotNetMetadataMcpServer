@@ -1,30 +1,7 @@
-using System.Text.Json.Serialization;
 using DotNetMetadataMcpServer.Models.Base;
 
 namespace DotNetMetadataMcpServer.Models
 {
-    public class NuGetPackageSearchParameters : PagedRequestWithFilter
-    {
-        public required string SearchQuery { get; init; }
-        public bool IncludePrerelease { get; init; } = false;
-    }
-    
-    [JsonSerializable(typeof(NuGetPackageSearchParameters))]
-    public partial class NuGetPackageSearchParametersJsonContext : JsonSerializerContext
-    {
-    }
-
-    public class NuGetPackageVersionParameters : PagedRequestWithFilter
-    {
-        public required string PackageId { get; init; }
-        public bool IncludePrerelease { get; init; } = false;
-    }
-    
-    [JsonSerializable(typeof(NuGetPackageVersionParameters))]
-    public partial class NuGetPackageVersionParametersJsonContext : JsonSerializerContext
-    {
-    }
-
     public class NuGetPackageInfo
     {
         public required string Id { get; set; }

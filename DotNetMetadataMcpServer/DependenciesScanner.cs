@@ -1,11 +1,9 @@
 using System.Reflection;
 using System.Runtime.Loader;
 using DependencyGraph.Core.Graph;
-using DependencyGraph.Core.Graph.Factory;
 using Microsoft.Build.Locator;
 using Microsoft.Extensions.Logging.Abstractions;
 using NuGet.ProjectModel;
-using NullLogger = NuGet.Common.NullLogger;
 
 namespace DotNetMetadataMcpServer;
 

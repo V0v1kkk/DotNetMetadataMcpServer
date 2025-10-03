@@ -1,8 +1,7 @@
+using System.Reflection;
 using DotNetMetadataMcpServer.Configuration;
 using DotNetMetadataMcpServer.Services;
-using DotNetMetadataMcpServer.ToolHandlers;
-using ModelContextProtocol.NET.Core.Models.Protocol.Common;
-using ModelContextProtocol.NET.Server.Builder;
+using DotNetMetadataMcpServer.Tools;
 using Serilog;
 
 namespace DotNetMetadataMcpServer;
@@ -11,11 +10,11 @@ namespace DotNetMetadataMcpServer;
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 public class Program
 {
-    /*/// <summary>
+    /// <summary>
     /// DotNet Metadata MCP Server
     /// </summary>
-    /// <param name="homeEnvVariable">The home environment variable</param>
-    /// <returns></returns>*/
+    /// <param name="args">Command line arguments</param>
+    /// <returns>Exit code</returns>
     public static async Task<int> Main(string[] args)
     {
         if (args.Length < 2 || string.IsNullOrWhiteSpace(args[0]) || args[0] != "--homeEnvVariable" || string.IsNullOrWhiteSpace(args[1]))
@@ -44,36 +43,45 @@ public class Program
         {
             logger.Information("Starting the server");
             
-            var serverInfo = new Implementation
-            {
-                Name = "DotNet Projects Types Explorer MCP Server",
-                Version = "1.0.0"
-            };
-        
-            var builder = new McpServerBuilder(serverInfo).AddStdioTransport();
-            builder.Services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(logger));
+            var builder = Host.CreateApplicationBuilder(args);
             
+            // Configure logging
+            builder.Logging.ClearProviders();
+            builder.Logging.AddSerilog(logger);
+            builder.Logging.AddConsole(options =>
+            {
+                options.LogToStandardErrorThreshold = LogLevel.Trace;
+            });
+            
+            // Configure MCP server
+            builder.Services.AddMcpServer(options =>
+            {
+                options.ServerInfo = new ModelContextProtocol.Protocol.Implementation
+                {
+                    Name = "DotNet Projects Types Explorer MCP Server",
+                    Version = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0"
+                };
+            })
+            .WithStdioServerTransport()
+            .WithTools<AssemblyTools>()
+            .WithTools<NamespaceTools>()
+            .WithTools<TypeTools>()
+            .WithTools<NuGetTools>();
+            
+            // Register configuration
             builder.Services.Configure<ToolsConfiguration>(configuration.GetSection(ToolsConfiguration.SectionName));
             
+            // Register services as scoped (per request)
             builder.Services.AddScoped<MsBuildHelper>();
             builder.Services.AddScoped<ReflectionTypesCollector>();
-            builder.Services.AddScoped(typeof(IDependenciesScanner), typeof(DependenciesScanner));
-
+            builder.Services.AddScoped<IDependenciesScanner, DependenciesScanner>();
             builder.Services.AddScoped<AssemblyToolService>();
             builder.Services.AddScoped<NamespaceToolService>();
             builder.Services.AddScoped<TypeToolService>();
             builder.Services.AddScoped<NuGetToolService>();
             
-
-            builder.Tools.AddHandler<AssemblyToolHandler>();
-            builder.Tools.AddHandler<NamespaceToolHandler>();
-            builder.Tools.AddHandler<TypeToolHandler>();
-            builder.Tools.AddHandler<NuGetPackageSearchToolHandler>();
-            builder.Tools.AddHandler<NuGetPackageVersionsToolHandler>();
-            
             var host = builder.Build();
-            host.Start();
-            await Task.Delay(-1);
+            await host.RunAsync();
 
             return 0;
         }
@@ -90,49 +98,4 @@ public class Program
             await Log.CloseAndFlushAsync();
         }
     }
-    
-    // todo: refactor to use the new builder
-    /*public static async Task Main(string[] args)
-    {
-        var logger = new LoggerConfiguration()
-            .WriteTo.File("log.txt")
-            .MinimumLevel.Debug()
-            .CreateLogger();
-        Log.Logger = logger; 
-        
-        try
-        {
-            var serverInfo = new Implementation
-            {
-                Name = "DotNet Projects Types Explorer MCP Server",
-                Version = "1.0.0"
-            };
-        
-            var builder = Host.CreateApplicationBuilder();
-            
-            builder.Services.AddMcpServer(serverInfo, mcp => {
-                mcp.AddStdioTransport();
-                mcp.Services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(logger));
-                mcp.Tools.AddHandler<DotNetProjectTypesExplorerToolHandler>();
-            }, keepDefaultLogging: false);
-            
-            builder.Services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(logger));
-            
-            builder.Services.AddScoped<MsBuildHelper>();
-            builder.Services.AddScoped<ReflectionTypesCollector>();
-            builder.Services.AddScoped<DependenciesScanner>();
-            builder.Services.AddScoped<DotNetProjectTypesExplorerToolHandler>();
-
-            var host = builder.Build();
-            await host.RunAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
-        finally
-        {
-            await Log.CloseAndFlushAsync();
-        }
-    }*/
 }

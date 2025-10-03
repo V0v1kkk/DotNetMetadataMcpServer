@@ -1,6 +1,5 @@
 using System.Reflection;
 using System.Runtime.Loader;
-using Microsoft.Extensions.Logging;
 
 namespace DotNetMetadataMcpServer;
 

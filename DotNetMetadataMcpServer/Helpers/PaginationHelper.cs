@@ -1,5 +1,3 @@
-using System.Linq;
-
 namespace DotNetMetadataMcpServer.Helpers
 {
     public static class PaginationHelper
