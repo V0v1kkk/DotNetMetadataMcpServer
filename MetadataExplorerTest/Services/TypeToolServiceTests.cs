@@ -5,6 +5,7 @@ using DotNetMetadataMcpServer.Services;
 namespace MetadataExplorerTest.Services;
 
 [TestFixture]
+[NonParallelizable] // Uses DependenciesScanner which calls MSBuildLocator.RegisterDefaults()
 public class TypeToolServiceTests
 {
     private string _testProjectPath;

@@ -4,7 +4,7 @@ using DotNetMetadataMcpServer.Services;
 namespace MetadataExplorerTest.Services;
 
 [TestFixture]
-[Parallelizable(ParallelScope.All)]
+[NonParallelizable] // Uses DependenciesScanner which calls MSBuildLocator.RegisterDefaults()
 public class AssemblyToolServiceTests
 {
     private string _testProjectPath;
