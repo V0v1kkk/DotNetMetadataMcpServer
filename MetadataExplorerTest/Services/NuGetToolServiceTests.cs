@@ -1,5 +1,7 @@
+using DotNetMetadataMcpServer.Configuration;
 using DotNetMetadataMcpServer.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace MetadataExplorerTest.Services;
@@ -14,7 +16,8 @@ public class NuGetToolServiceTests
     public void Setup()
     {
         _loggerMock = new Mock<ILogger<NuGetToolService>>();
-        _service = new NuGetToolService(_loggerMock.Object);
+        var config = Options.Create(new ToolsConfiguration());
+        _service = new NuGetToolService(_loggerMock.Object, config);
     }
 
     [Test]

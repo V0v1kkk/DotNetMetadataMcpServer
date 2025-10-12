@@ -35,6 +35,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 - [x] Add NuGet integration to provide information about actual package versions
 - [x] Migrate to official Model Context Protocol C# SDK ([modelcontextprotocol/csharp-sdk](https://github.com/modelcontextprotocol/csharp-sdk))
+- [x] Support for multiple NuGet package sources (custom/private feeds)
 - [ ] Add dependency graph building capabilities
 - [ ] Improve multi-project scenario
 
@@ -42,6 +43,70 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 - .NET 9.0 SDK or later
 - A .NET project that you want to explore
+
+## Configuration
+
+### NuGet Package Sources
+
+The server supports querying multiple NuGet package sources simultaneously. Configure custom sources in `appsettings.json`:
+
+```json
+{
+  "Tools": {
+    "DefaultPageSize": 20,
+    "IntendResponse": false,
+    "NuGetSources": [
+      {
+        "Name": "nuget.org",
+        "Url": "https://api.nuget.org/v3/index.json",
+        "Enabled": true
+      },
+      {
+        "Name": "MyPrivateFeed",
+        "Url": "https://my-company.com/nuget/v3/index.json",
+        "Enabled": true
+      },
+      {
+        "Name": "dotnet-core (MyGet)",
+        "Url": "https://dotnet.myget.org/F/dotnet-core/api/v3/index.json",
+        "Enabled": true,
+        "Comment": "Example: MyGet public feed for .NET Core preview packages"
+      }
+    ]
+  }
+}
+```
+
+**Configuration Options:**
+- **Name**: Friendly name for the package source
+- **Url**: Full URL to the NuGet v3 API endpoint (must end with `/v3/index.json`)
+- **Enabled**: Set to `false` to temporarily disable a source without removing it
+
+**Behavior:**
+- All enabled sources are queried in parallel for better performance
+- Results are automatically deduplicated by package ID and version
+- If one source fails, the server continues with the remaining sources
+- **Default source behavior**: nuget.org is added ONLY if no sources are configured in `appsettings.json`
+
+**Source Priority and Deduplication:**
+
+When the same package is found in multiple sources, the server uses a **priority-based strategy**:
+
+1. **Priority is determined by order**: Sources listed first in configuration have **higher priority**
+2. **Deterministic results**: The first source in the list always takes precedence for duplicate packages
+3. **Parallel queries**: Despite parallel execution, results are processed in priority order
+4. **Metadata consistency**: Package metadata (description, download count, etc.) always comes from the highest priority source containing that package
+
+**Example:**
+```json
+{
+  "NuGetSources": [
+    { "Name": "Internal", "Url": "https://internal.company.com/nuget/v3/index.json", "Enabled": true },
+    { "Name": "nuget.org", "Url": "https://api.nuget.org/v3/index.json", "Enabled": true }
+  ]
+}
+```
+In this configuration, if a package exists in both sources, information from "Internal" will be used.
 
 ## Installation
 

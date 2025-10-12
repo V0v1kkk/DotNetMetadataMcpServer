@@ -1,6 +1,8 @@
 using DotNetMetadataMcpServer;
+using DotNetMetadataMcpServer.Configuration;
 using DotNetMetadataMcpServer.Services;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 
 namespace MetadataExplorerTest;
@@ -75,7 +77,8 @@ public class ServicesIntegrationTests
     [Test, Order(4)]
     public async Task NuGetToolService_SearchPackages_ShouldReturnResults()
     {
-        var service = new NuGetToolService(_nugetLoggerMock.Object);
+        var config = Options.Create(new ToolsConfiguration());
+        var service = new NuGetToolService(_nugetLoggerMock.Object, config);
         var response = await service.SearchPackagesAsync("Newtonsoft.Json", new List<string>(), false, 1, 10);
 
         Assert.That(response.Packages, Is.Not.Null);
@@ -87,7 +90,8 @@ public class ServicesIntegrationTests
     [Test, Order(5)]
     public async Task NuGetToolService_GetPackageVersions_ShouldReturnVersionsWithDependencies()
     {
-        var service = new NuGetToolService(_nugetLoggerMock.Object);
+        var config = Options.Create(new ToolsConfiguration());
+        var service = new NuGetToolService(_nugetLoggerMock.Object, config);
         var response = await service.GetPackageVersionsAsync("Newtonsoft.Json", new List<string>(), false, 1, 10);
 
         Assert.That(response.Versions, Is.Not.Null);

@@ -19,12 +19,12 @@ public class NuGetToolsTests
     [SetUp]
     public void Setup()
     {
-        _nuGetToolService = new NuGetToolService(NullLogger<NuGetToolService>.Instance);
         _toolsConfiguration = Options.Create(new ToolsConfiguration
         {
             DefaultPageSize = 20,
             IntendResponse = false
         });
+        _nuGetToolService = new NuGetToolService(NullLogger<NuGetToolService>.Instance, _toolsConfiguration);
         _logger = NullLogger<NuGetTools>.Instance;
     }
 
