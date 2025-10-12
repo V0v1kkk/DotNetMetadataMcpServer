@@ -8,6 +8,7 @@ using Moq;
 namespace MetadataExplorerTest;
 
 [TestFixture]
+[Parallelizable(ParallelScope.All)]
 public class NuGetDependenciesTest
 {
     private NuGetToolService _service;

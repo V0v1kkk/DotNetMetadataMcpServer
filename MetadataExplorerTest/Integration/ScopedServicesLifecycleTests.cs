@@ -12,6 +12,7 @@ namespace MetadataExplorerTest.Integration;
 /// and disposed after each request completes.
 /// </summary>
 [TestFixture]
+[NonParallelizable] // Uses static counter _scannerConstructedCount
 public class ScopedServicesLifecycleTests : McpServerIntegrationTestBase
 {
     private static int _scannerConstructedCount = 0;

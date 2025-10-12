@@ -10,6 +10,7 @@ using System.Text.Json;
 namespace MetadataExplorerTest.Tools;
 
 [TestFixture]
+[Parallelizable(ParallelScope.All)]
 public class NuGetToolsTests
 {
     private NuGetToolService _nuGetToolService = null!;

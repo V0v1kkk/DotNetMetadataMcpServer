@@ -8,6 +8,7 @@ using Moq;
 namespace MetadataExplorerTest;
 
 [TestFixture]
+[NonParallelizable] // Uses static fields and ordered tests
 public class ServicesIntegrationTests
 {
     private string _testProjectPath;

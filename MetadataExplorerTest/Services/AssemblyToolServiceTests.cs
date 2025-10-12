@@ -4,6 +4,7 @@ using DotNetMetadataMcpServer.Services;
 namespace MetadataExplorerTest.Services;
 
 [TestFixture]
+[Parallelizable(ParallelScope.All)]
 public class AssemblyToolServiceTests
 {
     private string _testProjectPath;

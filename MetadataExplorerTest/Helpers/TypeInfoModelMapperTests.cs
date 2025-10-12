@@ -4,6 +4,7 @@ using DotNetMetadataMcpServer.Helpers;
 namespace MetadataExplorerTest.Helpers;
 
 [TestFixture]
+[Parallelizable(ParallelScope.All)]
 public class TypeInfoModelMapperTests
 {
     [Test]

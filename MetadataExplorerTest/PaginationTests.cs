@@ -2,6 +2,8 @@ using DotNetMetadataMcpServer.Helpers;
 
 namespace MetadataExplorerTest
 {
+    [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class PaginationTests
     {
         [Test]

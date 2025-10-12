@@ -15,6 +15,7 @@ namespace MetadataExplorerTest.Integration;
 /// These tests use a real MCP server and client connected through in-memory pipes.
 /// </summary>
 [TestFixture]
+[NonParallelizable] // MCP client with pipe streams does not support concurrent reads/writes
 public class EndToEndToolTests : McpServerIntegrationTestBase
 {
     protected override void ConfigureServices(ServiceCollection services, IMcpServerBuilder mcpServerBuilder)

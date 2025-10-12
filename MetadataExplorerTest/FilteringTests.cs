@@ -34,6 +34,7 @@ namespace MetadataExplorerTest
     }
 
     [TestFixture]
+    [Parallelizable(ParallelScope.All)]
     public class FilteringTests
     {
         private IDependenciesScanner _fakeScanner;

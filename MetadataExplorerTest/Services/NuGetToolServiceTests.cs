@@ -7,6 +7,7 @@ using Moq;
 namespace MetadataExplorerTest.Services;
 
 [TestFixture]
+[Parallelizable(ParallelScope.All)]
 public class NuGetToolServiceTests
 {
     private NuGetToolService _service;

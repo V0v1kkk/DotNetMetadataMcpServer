@@ -11,6 +11,7 @@ namespace MetadataExplorerTest.Services;
 /// Verifies that the service can query multiple NuGet feeds and aggregate results.
 /// </summary>
 [TestFixture]
+[Parallelizable(ParallelScope.All)]
 public class NuGetMultiSourceTests
 {
     [Test]

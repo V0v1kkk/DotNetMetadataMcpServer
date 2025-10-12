@@ -4,6 +4,7 @@ using DotNetMetadataMcpServer.Services;
 namespace MetadataExplorerTest.Integration;
 
 [TestFixture]
+[Parallelizable(ParallelScope.Self)] // Uses OneTimeSetUp with shared scanner
 public class TypeReflectionTests
 {
     private DependenciesScanner _scanner;
