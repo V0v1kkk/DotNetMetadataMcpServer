@@ -110,6 +110,8 @@ In this configuration, if a package exists in both sources, information from "In
 
 ## Installation
 
+### Option 1: Native Installation
+
 1. Clone the repository
 2. Build the project:
    ```bash
@@ -121,7 +123,39 @@ In this configuration, if a package exists in both sources, information from "In
    ```
    Replace `<runtime-identifier>` with your target platform (e.g., `win-x64`, `linux-x64`, `osx-x64`).
 
+### Option 2: Docker
+
+The server is available as a Docker container, providing better isolation and easier deployment:
+
+1. **Pull the image** from Docker Hub:
+   ```bash
+   docker pull vrogozhin/dotnet-types-explorer-mcp:latest
+   ```
+
+2. **Or build locally**:
+   ```bash
+   git clone https://github.com/V0v1kkk/DotNetMetadataMcpServer.git
+   cd DotNetMetadataMcpServer
+   docker build -t dotnet-types-explorer-mcp .
+   ```
+
+3. **Run the container**:
+   ```bash
+   docker run --rm -i \
+     -v /path/to/your/dotnet/projects:/workspace \
+     vrogozhin/dotnet-types-explorer-mcp:latest
+   ```
+
+**Benefits of Docker deployment:**
+- No need to install .NET SDK on your machine
+- Isolated environment prevents conflicts
+- Consistent behavior across different operating systems
+- Includes MSBuild and all required dependencies
+- Easy updates by pulling the latest image
+
 ## Configuration
+
+### Native Configuration
 
 To use the .NET Types Explorer MCP Server with an AI agent, you need to configure it in your MCP settings file. Here's an example configuration:
 
@@ -140,6 +174,33 @@ To use the .NET Types Explorer MCP Server with an AI agent, you need to configur
 ```
 
 Replace `/path/to/DotNetMetadataMcpServer` with the actual path to the published executable, and `/home/user` with your home directory.
+
+### Docker Configuration
+
+For Docker deployment, configure your MCP client as follows:
+
+```json
+{
+  "mcpServers": {
+    "dotnet-types-explorer": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "-v",
+        "/path/to/your/dotnet/projects:/workspace",
+        "vrogozhin/dotnet-types-explorer-mcp:latest"
+      ],
+      "disabled": false,
+      "alwaysAllow": [],
+      "timeout": 300
+    }
+  }
+}
+```
+
+Replace `/path/to/your/dotnet/projects` with the directory containing your .NET projects. The container will have access to all projects in this directory.
 
 ## Important Limitations
 
