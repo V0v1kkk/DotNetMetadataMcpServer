@@ -6,6 +6,7 @@ using DotNetMetadataMcpServer.Tools;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ModelContextProtocol.Client;
 using System.Text.Json;
 
 namespace MetadataExplorerTest.Integration;
@@ -89,10 +90,7 @@ public class EndToEndToolTests : McpServerIntegrationTestBase
         // Assert
         Assert.That(result, Is.Not.Null);
         
-        // The result is a JsonElement containing CallToolResult with content array
-        var jsonResult = (JsonElement)result;
-        var contentArray = jsonResult.GetProperty("content");
-        var textContent = contentArray[0].GetProperty("text").GetString();
+        var textContent = ExtractTextFromToolResult(result!);
         Assert.That(textContent, Is.Not.Null.And.Not.Empty);
         
         var response = JsonSerializer.Deserialize<NuGetPackageSearchResponse>(textContent!);
@@ -125,10 +123,7 @@ public class EndToEndToolTests : McpServerIntegrationTestBase
         // Assert
         Assert.That(result, Is.Not.Null);
         
-        // The result is a JsonElement containing CallToolResult with content array
-        var jsonResult = (JsonElement)result;
-        var contentArray = jsonResult.GetProperty("content");
-        var textContent = contentArray[0].GetProperty("text").GetString();
+        var textContent = ExtractTextFromToolResult(result!);
         Assert.That(textContent, Is.Not.Null.And.Not.Empty);
         
         var response = JsonSerializer.Deserialize<NuGetPackageVersionsResponse>(textContent!);
@@ -189,10 +184,8 @@ public class EndToEndToolTests : McpServerIntegrationTestBase
         foreach (var result in results)
         {
             Assert.That(result, Is.Not.Null);
-            // Verify we can extract content from the result
-            var jsonResult = (JsonElement)result!;
-            var contentArray = jsonResult.GetProperty("content");
-            Assert.That(contentArray.GetArrayLength(), Is.GreaterThan(0));
+            var textContent = ExtractTextFromToolResult(result!);
+            Assert.That(textContent, Is.Not.Null.And.Not.Empty);
         }
     }
 
@@ -211,30 +204,32 @@ public class EndToEndToolTests : McpServerIntegrationTestBase
             ["pageNumber"] = 1
         };
 
-        // The tool should either throw or return a result with isError=true
-        // Let's check what actually happens
         try
         {
             var result = await assemblyTool.InvokeAsync(arguments);
             
-            // If we get a result, check if it has isError flag
-            var jsonResult = (JsonElement)(result ?? throw new InvalidOperationException("Result is null"));
-            if (jsonResult.TryGetProperty("isError", out var isErrorProp))
+            if (result is JsonElement jsonResult)
             {
-                Assert.That(isErrorProp.GetBoolean(), Is.True, 
-                    "Expected isError to be true for invalid project path");
+                if (jsonResult.TryGetProperty("isError", out var isErrorProp))
+                {
+                    Assert.That(isErrorProp.GetBoolean(), Is.True, 
+                        "Expected isError to be true for invalid project path");
+                }
+                else if (jsonResult.TryGetProperty("content", out var contentArray))
+                {
+                    var textContent = contentArray[0].GetProperty("text").GetString();
+                    Assert.That(textContent, Does.Contain("error").IgnoreCase.Or.Contains("exception").IgnoreCase,
+                        "Expected error message in content for invalid project path");
+                }
             }
-            // If there's no isError property, the result should contain error information in content
-            else if (jsonResult.TryGetProperty("content", out var contentArray))
+            else if (result is TextContent textContent)
             {
-                var textContent = contentArray[0].GetProperty("text").GetString();
-                Assert.That(textContent, Does.Contain("error").IgnoreCase.Or.Contains("exception").IgnoreCase,
+                Assert.That(textContent.Text, Does.Contain("error").IgnoreCase.Or.Contains("exception").IgnoreCase,
                     "Expected error message in content for invalid project path");
             }
         }
         catch (Exception ex)
         {
-            // If it throws, that's also acceptable behavior
             Assert.Pass($"Tool threw exception as expected: {ex.GetType().Name}");
         }
     }
@@ -268,11 +263,25 @@ public class EndToEndToolTests : McpServerIntegrationTestBase
         foreach (var result in results)
         {
             Assert.That(result, Is.Not.Null);
-            // Verify we can extract content from the result
-            var jsonResult = (JsonElement)result!;
-            var contentArray = jsonResult.GetProperty("content");
-            Assert.That(contentArray.GetArrayLength(), Is.GreaterThan(0));
+            var textContent = ExtractTextFromToolResult(result!);
+            Assert.That(textContent, Is.Not.Null.And.Not.Empty);
         }
+    }
+
+    /// <summary>
+    /// In ModelContextProtocol v1.0.0, InvokeAsync returns TextContent for single text results
+    /// instead of JsonElement. This helper extracts the text regardless of the return type.
+    /// </summary>
+    private static string? ExtractTextFromToolResult(object result)
+    {
+        return result switch
+        {
+            TextContent tc => tc.Text,
+            JsonElement je when je.TryGetProperty("content", out var arr) =>
+                arr[0].GetProperty("text").GetString(),
+            _ => throw new InvalidOperationException(
+                $"Unexpected tool result type: {result.GetType().Name}")
+        };
     }
 }
 
