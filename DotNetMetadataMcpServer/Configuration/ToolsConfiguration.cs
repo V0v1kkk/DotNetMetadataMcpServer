@@ -3,9 +3,10 @@ namespace DotNetMetadataMcpServer.Configuration;
 public class ToolsConfiguration
 {
     public const string SectionName = "Tools";
-    
+
     public int DefaultPageSize { get; set; } = 20;
     public bool IntendResponse { get; set; } = true;
+    public AssemblyResolutionMode AssemblyResolutionMode { get; set; } = AssemblyResolutionMode.BuildOutput;
     public List<NuGetSourceConfiguration> NuGetSources { get; set; } = new()
     {
         new NuGetSourceConfiguration
