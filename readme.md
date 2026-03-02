@@ -28,6 +28,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
   - Events with handler types
 - **NuGet Package Search**: Search for NuGet packages on nuget.org with filtering and pagination
 - **NuGet Package Version Information**: Retrieve version history and dependency information for specific NuGet packages
+- **Configurable Assembly Resolution**: Resolve assemblies from build output, NuGet global packages cache (restore-only, no build required), or automatically try both
 - **Filtering**: Apply wildcard filters to narrow down results
 - **Pagination**: Handle large result sets with built-in pagination
 
@@ -107,6 +108,26 @@ When the same package is found in multiple sources, the server uses a **priority
 }
 ```
 In this configuration, if a package exists in both sources, information from "Internal" will be used.
+
+### Assembly Resolution Mode
+
+The server supports different strategies for locating package assemblies. Configure this in `appsettings.json`:
+
+```json
+{
+  "Tools": {
+    "AssemblyResolutionMode": "NuGetCache"
+  }
+}
+```
+
+| Mode | Behavior |
+|-|-|
+| `BuildOutput` | Default. Resolve assemblies from the build output directory (e.g. `bin/Debug/net9.0/`). Requires a full build. |
+| `NuGetCache` | Resolve assemblies directly from the NuGet global packages cache. Only requires `dotnet restore`, no build needed. Project types are skipped gracefully. |
+| `Auto` | Try build output first, fall back to NuGet cache if the assembly is not found in the build output. |
+
+The `NuGetCache` mode is particularly useful when you primarily need to explore third-party package APIs without waiting for a full build cycle. The global packages folder path is read from `project.assets.json` automatically.
 
 ## Installation
 
@@ -204,7 +225,7 @@ Replace `/path/to/your/dotnet/projects` with the directory containing your .NET 
 
 ## Important Limitations
 
-- **The project must be built before scanning.** The server relies on compiled assemblies to extract type information, so make sure to build your project before using the tools.
+- **Build requirement depends on resolution mode.** In `BuildOutput` mode (default), the project must be built before scanning. In `NuGetCache` mode, only `dotnet restore` is required — the server resolves package assemblies directly from the NuGet global packages cache. Project-specific types are only available when the project has been built.
 - **The tool doesn't follow references to other projects.** It only inspects the specified project and its NuGet dependencies. If you need to analyze multiple projects, you'll need to scan each one separately.
 
 ### How project outputs are located
