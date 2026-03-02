@@ -142,7 +142,7 @@ public class ScopedServicesLifecycleTests : McpServerIntegrationTestBase
             MsBuildHelper msBuildHelper,
             ReflectionTypesCollector reflectionTypesCollector,
             Microsoft.Extensions.Logging.ILogger<DependenciesScanner> logger)
-            : base(msBuildHelper, reflectionTypesCollector, logger)
+            : base(msBuildHelper, reflectionTypesCollector, logger: logger)
         {
             // Construction is already tracked in the factory method
         }
