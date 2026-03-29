@@ -2,6 +2,10 @@
 
 A Model Context Protocol (MCP) server that provides detailed type information from .NET projects for AI coding agents.
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/v0v1kkk-dotnetmetadatamcpserver).
+
 ## Overview
 
 The .NET Types Explorer MCP Server is a powerful tool designed to help AI coding agents understand and work with .NET codebases. 
